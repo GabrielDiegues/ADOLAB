@@ -52,7 +52,34 @@ public class AlunoRepository : IRepository<Aluno>
     /// <returns>O ID do Aluno recém-inserido.</returns>
     public int Inserir(string nome, int idade, string email, DateTime dataNascimento)
     {
-        throw new NotImplementedException();
+        try
+        {
+            const string sql = @"
+            INSERT INTO dbo.Alunos (Nome, Idade, Email, DataNascimento)
+            OUTPUT INSERTED.Id
+            VALUES (@Nome, @Idade, @Email, @DataNascimento)";
+
+            using var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Nome", nome);
+            cmd.Parameters.AddWithValue("@Idade", idade);
+            cmd.Parameters.AddWithValue("@Email", email);
+            cmd.Parameters.AddWithValue("@DataNascimento", dataNascimento);
+
+            var result = cmd.ExecuteScalar();
+            if(result != null)
+            {
+                return Convert.ToInt32(result);
+            }
+            Console.WriteLine("Erro! ID do aluno inserido é nulo");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao inserir aluno: {ex.Message}");
+            return 0;
+        }
     }
 
     /// <summary>
@@ -61,7 +88,34 @@ public class AlunoRepository : IRepository<Aluno>
     /// <returns>Uma lista de entidades Aluno.</returns>
     public List<Aluno> Listar()
     {
-        throw new NotImplementedException();
+        var alunos = new List<Aluno>();
+        try
+        {
+            const string sql = "SELECT Id, Nome, Idade, Email, DataNascimento FROM dbo.Alunos";
+
+            using var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                alunos.Add(new Aluno
+                (
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2),
+                    reader.GetString(3),
+                    reader.GetDateTime(4)
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao listar alunos: {ex.Message}");
+        }
+
+        return alunos;
     }
 
     /// <summary>
@@ -75,7 +129,29 @@ public class AlunoRepository : IRepository<Aluno>
     /// <returns>O número de linhas afetadas.</returns>
     public int Atualizar(int id, string nome, int idade, string email, DateTime dataNascimento)
     {
-        throw new NotImplementedException();
+        try
+        {
+            const string sql = @"
+            UPDATE dbo.Alunos
+            SET Nome = @Nome, Idade = @Idade, Email = @Email, DataNascimento = @DataNascimento
+            WHERE Id = @Id";
+
+            using var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Nome", nome);
+            cmd.Parameters.AddWithValue("@Idade", idade);
+            cmd.Parameters.AddWithValue("@Email", email);
+            cmd.Parameters.AddWithValue("@DataNascimento", dataNascimento);
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            return cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar aluno {id}: {ex.Message}");
+            return 0;
+        }
     }
 
     /// <summary>
@@ -85,7 +161,22 @@ public class AlunoRepository : IRepository<Aluno>
     /// <returns>O número de linhas afetadas.</returns>
     public int Excluir(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            const string sql = "DELETE FROM dbo.Alunos WHERE Id = @Id";
+
+            using var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            return cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao excluir aluno {id}: {ex.Message}");
+            return 0;
+        }
     }
 
     /// <summary>
@@ -96,6 +187,38 @@ public class AlunoRepository : IRepository<Aluno>
     /// <returns>Uma lista de entidades Aluno correspondentes.</returns>
     public List<Aluno> Buscar(string propriedade, object valor)
     {
-        throw new NotImplementedException();
+        var alunos = new List<Aluno>();
+        try
+        {
+            var colunasValidas = new HashSet<string> { "Id", "Nome", "Idade", "Email", "DataNascimento" };
+            if (!colunasValidas.Contains(propriedade))
+                throw new ArgumentException($"Propriedade inválida: {propriedade}");
+
+            string sql = $"SELECT Id, Nome, Idade, Email, DataNascimento FROM dbo.Alunos WHERE {propriedade} = @Valor";
+
+            using var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Valor", valor);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                alunos.Add(new Aluno
+                (
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2),
+                    reader.GetString(3),
+                    reader.GetDateTime(4)
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao buscar alunos por {propriedade}={valor}: {ex.Message}");
+        }
+
+        return alunos;
     }
 }
