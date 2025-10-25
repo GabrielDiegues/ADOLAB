@@ -8,8 +8,8 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-string connString = config.GetConnectionString("SqlServerConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:SqlServerConnection não encontrada.");
+string connString = config.GetConnectionString("EscolaDatabase")
+    ?? throw new InvalidOperationException("ConnectionStrings:EscolaDatabase não encontrada.");
 #endregion
 
 var logger = new FileLogger("log.txt");
